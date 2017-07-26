@@ -27,19 +27,21 @@ var WORLD_APP = (function () {
          in the map data and treat them as they are included in your data provider.
          in case you don't set it to true, all the areas except listed in data
          provider will be treated as unlisted.
-        */
+         */
         var dataProvider = {
             mapVar: AmCharts.maps.worldLow,
             areas: []
         };
 
-        WORLD_APP.allCountries.sort(function (a, b) {
-            return a.area - b.area;
-        });
-
-        var i;
+        var i, j;
         var totalArea = 0;
         var conqueredColor = "#66CC99";
+
+        WORLD_APP.allCountries.sort(function (country1, country2) {
+            return country1.area - country2.area;
+        });
+
+        // calculate size of the area that should be drawn as conquered
         for (i = 0; i < WORLD_APP.allCountries.length; i++) {
             totalArea += WORLD_APP.allCountries[i].area;
         }
@@ -47,26 +49,38 @@ var WORLD_APP = (function () {
 
         var cumulativeArea = 0;
         for (i = 0; i < WORLD_APP.allCountries.length; i++) {
-            var dataItem = WORLD_APP.allCountries[i];
+            var country = WORLD_APP.allCountries[i];
 
-            ///conqueredColor = gradient(conqueredColor, 256);
-            var newMapItem = {
-                id: dataItem.alpha2Code,
-                title: dataItem.name
-            };
-            if (cumulativeArea < conqueredArea) {
-                console.log(dataItem.name + "- conquered!");
-                newMapItem.color = conqueredColor;
-                cumulativeArea += dataItem.area;
-            } else {
-                console.log(dataItem.name);
+            if (isPresentInBothCollections(country)) {
+                var newMapItem = {
+                    id: country.alpha2Code,
+                    title: country.name
+                };
+                ///conqueredColor = gradient(conqueredColor, 256);
+                if (cumulativeArea < conqueredArea) {
+                    console.log(country.name + "- conquered!");
+                    newMapItem.color = conqueredColor;
+                    cumulativeArea += country.area;
+                } else {
+                    console.log(country.name);
+                }
+
+                dataProvider.areas.push(newMapItem);
             }
-
-            dataProvider.areas.push(newMapItem);
         }
 
         // pass data provider to the map object
         map.dataProvider = dataProvider;
+    }
+
+    function isPresentInBothCollections(country) {
+        var originalCountryCollection = AmCharts.maps.worldLow.svg.g.path;
+        for (var j = 0; j < originalCountryCollection.length; j++) {
+            if (originalCountryCollection[j].id === country.alpha2Code) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function gradient(color, step) {
