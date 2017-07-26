@@ -14,7 +14,7 @@ var WORLD_APP = (function () {
             color: "#DDDDDD",
             unlistedAreasColor: "#DDDDDD",
             rollOverOutlineColor: "#FFFFFF",
-            rollOverColor: "#CC0000",
+            rollOverColor: "#0000CC",
             unlistedAreasAlpha: 0.1
         };
 
@@ -34,43 +34,53 @@ var WORLD_APP = (function () {
         };
 
         var i, j;
-        var totalArea = 0;
-        var conqueredColor = "#66CC99";
-
-        WORLD_APP.allCountries.sort(function (country1, country2) {
-            return country1.area - country2.area;
-        });
+        var totalArea = conqueredArea = 0;
+        var conqueredColor = "#66CC99", toBeConqueredColor="#FF0000";
+        var countriesCollection = [];
+        var logMessage = "";
 
         // calculate size of the area that should be drawn as conquered
-        for (i = 0; i < WORLD_APP.allCountries.length; i++) {
-            totalArea += WORLD_APP.allCountries[i].area;
-        }
-        var conqueredArea = (totalArea * completionPercentage) / 100;
-
-        var cumulativeArea = 0;
         for (i = 0; i < WORLD_APP.allCountries.length; i++) {
             var country = WORLD_APP.allCountries[i];
 
             if (isPresentInBothCollections(country)) {
-                var newMapItem = {
-                    id: country.alpha2Code,
-                    title: country.name
-                };
-                ///conqueredColor = gradient(conqueredColor, 256);
-                if (cumulativeArea < conqueredArea) {
-                    console.log(country.name + "- conquered!");
-                    newMapItem.color = conqueredColor;
-                    cumulativeArea += country.area;
-                } else {
-                    console.log(country.name);
-                }
-
-                dataProvider.areas.push(newMapItem);
+                countriesCollection.push(country);
+                totalArea += country.area;
             }
+        }
+        conqueredArea = (totalArea * completionPercentage) / 100;
+
+        countriesCollection.sort(function (country1, country2) {
+            return country1.area - country2.area;
+        });
+
+        var cumulativeArea = 0, lastConqueredIndex = -1;
+        for (i = 0; i < countriesCollection.length; i++) {
+            var country = countriesCollection[i];
+
+            var newMapItem = {
+                id: country.alpha2Code,
+                title: country.name
+            };
+            ///conqueredColor = gradient(conqueredColor, 256);
+            logMessage = "" + (i+1) + "." + country.name;
+            if (cumulativeArea < conqueredArea) {
+                newMapItem.color = conqueredColor;
+                cumulativeArea += country.area;
+                lastConqueredIndex = i;
+                logMessage += " - conquered!";
+            } else if (i - lastConqueredIndex === 1) {
+                newMapItem.color = toBeConqueredColor;
+            }
+
+            dataProvider.areas.push(newMapItem);
+            console.log(logMessage);
         }
 
         // pass data provider to the map object
         map.dataProvider = dataProvider;
+        map.addTitle("Conquer The World. Occupied: " + completionPercentage + "%.", 14);
+	map.addTitle("Next target: " + countriesCollection[lastConqueredIndex+1].name, 11);
     }
 
     function isPresentInBothCollections(country) {
